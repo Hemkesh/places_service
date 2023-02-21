@@ -1,9 +1,10 @@
 library places_service;
 
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_webservice/places.dart';
+import 'package:google_maps_webservice_ex/places.dart';
 import 'package:tuple/tuple.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 import 'models/application_models.dart';
 
@@ -23,9 +24,17 @@ class PlacesService {
   String? get sessionToken => _sessionToken;
 
   /// Must initialize and pass in an API key.
-  void initialize({required String apiKey}) {
+  void initialize({
+    required String apiKey,
+    Map<String, String>? apiHeaders,
+    String? baseUrl,
+    http.Client? httpClient,
+  }) {
     _places = GoogleMapsPlaces(
       apiKey: apiKey,
+      apiHeaders: apiHeaders,
+      baseUrl: baseUrl,
+      httpClient: httpClient,
     );
   }
 
@@ -73,7 +82,7 @@ class PlacesService {
         // Indicate token reset on next auto complete request
         _resetSessionTokenForNextAutoComplete = true;
 
-        var details = detailsResponse.result;
+        var details = detailsResponse.result as PlaceDetails;
         var streetNumber = _getShortNameFromComponent(details, 'street_number');
         var streetShort = _getShortNameFromComponent(details, 'route');
         var city = _getShortNameFromComponent(details, 'locality');
@@ -89,8 +98,8 @@ class PlacesService {
           zip: _getShortNameFromComponent(details, 'postal_code'),
           city: city,
           searchString: '$streetNumber $streetShort, $city, $state',
-          lat: detailsResponse.result.geometry!.location.lat,
-          lng: detailsResponse.result.geometry!.location.lng,
+          lat: detailsResponse.result!.geometry!.location.lat,
+          lng: detailsResponse.result!.geometry!.location.lng,
         );
       },
       warningMessageForNotOkayResult: 'Could not get places from Google Maps',
